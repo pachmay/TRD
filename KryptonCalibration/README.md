@@ -113,3 +113,145 @@ root -l -b -q 'Ana_ADC_spectra.cc++(-1,2,-1,"KrHistOutput_<runNumber>_mode2_sect
 The header `bad_chambers.h` allows the user to define chambers flagged as bad, e.g., the ones with rediced HV or off.
 
 This feature is not currently used in the code. The header is anyway included in the repo as the current code requires it to run.
+
+## 3. PadCalibCCDBBuilder
+
+
+Class `PadCalibCCDBBuilder` is used to populate detector maps with results of the fits to the ADC pad-level spectra from the previous step, inter/extrapolating missing information, normalizing the gain to the detector average, and preparing a `LocalGainFactor` object for CCDB upload.
+
+### Class contains
+
+- PadCalibCCDBBuilder.cxx
+- PadCalibCCDBBuilder.h
+- CreateCCDBLocalGainFactor.C
+
+The code is commited to O2 under the `Detectors/TRD/.` directory.
+
+### Compilation
+
+
+In principle, the class can be run fully locally without relying on O$^2$ (by downloading the class and macro locally and simply commenting `namespace o2` and `namespace trd` and checking dependencies point to local files). Doing this may be advantageous if one needs to modify and test the code as doing so allows one to work on the code without having to rebuild O$^2$. The only part which *requires* O$^2$ is the one populating the LocalGainFactor and uploading it to the CCDB. 
+
+To run locally without O2, implement the following changes if you wish to test the code locally without having to rely on O2:
+1. Comment out all notions of `namespace o2` and `namespace trd`.
+2. Upate the list of headers in the `.cxx` file, the only relevant header not native to C++ or ROOT is `#include "PadCalibCCDBBuilder.h"`. This header also needs to be included in the steering macro. 
+3. In the `.cxx` file, add the following global variables:
+```
+int NCOLUMN = 144;
+int NROWC0 = 12;
+int NROWC1 = 16;
+```
+
+Then, compile the class using your local ROOT installation:
+```
+root -l
+.L PadCalibCCDBBuilder.cxx++
+```
+
+### Run the code
+Once the class is compiled, run the steering macro `CreateCCDBLocalGainFactor.C`. As input file, feed it the output from the previous step with pad-by-pad fits (so option `(-1,2,-1)`). The class run over the `nt_Krypton` TTree, which stores all the fit results.
+
+**However**, if you use the code curently (i.e., April 2, 2023) committed to O2, you need to implement two changes:
+1.  Loop over all chambers: `idet < 1` --> `idet < constants::MAXCHAMBER` (or `idet < 540` if you run without O2).
+2.  Call `PadCalibCCDBBuilder::populateEmptyNormalizedMap` once you normalize all filled maps (**before upload!**) so that **all the maps are filled with values that are not 0**. With the macro as it is now, some maps would remain empty and this will then mess up the workflow - the correction is applied in the denominator so you absolutely don’t want this empty! 
+3.  The committed macro has a return statement that currently cuts the code before CCDB upload. This was used for some testing so all you need to do if you want to upload something to the CCDB is to comment this away.
+4.  (Optional) You may comment the line `cout << calObject.getValue(0, 52, 13) << endl;` (see [l. 52](https://github.com/AliceO2Group/AliceO2/blob/33ecc0535ceae089c2bae81e2d751c21c85bb18d/Detectors/TRD/macros/CreateCCDBLocalGainFactor.C#L52) of the committed code). It was there just to check that the maps are indeed filled and contain some reasonable values.
+
+Remember that in order to be able to upload stuff to the CCDB, you need a valid token.
+
+#### Upload path and start time
+The maps are set to be uploaded into `"TRD/Calib/LocalGainFactor"`.
+
+The calibration is set to be valid from `start_time` to `end_time`. Leave the latter as is and for the former set some reasonable time, e.g., at 00:00 on the first day of the Krypton run.
+
+### What is stored in the uploaded object
+What is actually uploaded to the CCDB is a `LocalGainFactor` object, storing a local gain value for each pad as:
+```
+(detector ID , column ID , row ID , relative gain)
+```
+The relative gain has to be a number larger than 0. 
+
+### The analysis procedure
+The code takes the fitted gain values, pad-by-pad, and populates 2D representations of individual detectors. These 2D maps are defined as arrays of x=column $\times$ y=row pads. For most, this means 144 $\times$ 16 pads. For detectors in sector 2, there is  144 $\times$ 12 pads.
+
+#### Selecting "good fits"
+The root file produced in step 2 may in principle contain results of failed fits. Only pads whose fit pass a quality selection will be filled. To define appropriate cuts, the user will need to check the results of the previous step and set cuts that will work the best for a given data-taking period. In the code committed to the $O^2$, the following selection criteria have been hard-coded:
+- $\chi^2>0$
+- amplitude $>0$
+- stand. dev $>0$ && stand. dev $<1000$
+
+See method `PadCalibCCDBBuilder::getDetectorMap`, [link](https://github.com/AliceO2Group/AliceO2/blob/972204bd5ae56e62b182144de938e64c7f9e3203/Detectors/TRD/calibration/src/PadCalibCCDBBuilder.cxx#L386).
+Only values passing these criteria will be filled into the 2D maps. These criteria should serve as a reasonable first estimate for code testing etc.
+
+**In the here available code, a setter method allowing the user to easily set these criteria has been added.**
+
+#### "Smoothening" the maps
+The populated maps likely contain "hot" pads or regions with large difference between neigboring pad conent. From previous data-taking campaigns, we know that within one chamber, the pad-by-pad gains should create a smooth distribution, maybe with some low-gain pads at the edges.
+
+The method `PadCalibCCDBBuilder::smoothenTheDetector` serves to get rid of isolated clusters of hot pads or pairs of pads with a too large a difference between their respective gains. In other words, all pads deemed as sus by this method will be set to 0. The "too large a distance" can be set by the user, the default value is 1000.
+
+The result will be a detector map with empty pads in place where an inhomogoeneity was found.
+
+**Right now, the code does not *always* handle hot pads among other filled pads correctly. The issue is being looked into (Apr 21, 2023) and hopefully will be fixed by end of May 2023. However, if you see this comment in June 2023 onwardsm the issue is still there.**
+
+#### Filling the empty pads in populated maps
+The method `PadCalibCCDBBuilder::fillTheMap` takes all maps which are **not empty** and fills the empty pads in an iterative procedure. This method does not fill the original histogram but rather creates a new one.
+
+The filling scheme is as follows:
+1. The routine checks for empty pad and stores their coordinates.
+1. Each of these pads is filled with the content of a pad mirrored with respect to the y-axis. For example, an empty pad (column=0, row=0) will be filled with the content of pad (143,0).
+2. If the bertically mirrored pad is empty, the pad is filled with the content of the pad mirrored with rerspect to the x-axis. So the example pad from above (0,0) will be filled with the content of the pad (0,15) (or in case of some chamebrs with (0,11)).
+3. If both vertically and hotizontally mirrored pads are empty, the pad is filled with the average of contents of its closest neighbors. At least one neighboring pad must be filled. Otherwise the pad is skipped in the given round and filled later on.
+4. The entire process is repeated until there are no more empty pads. So for this to work, the original map needs to contain at least one filled pad.
+
+All the values in the filled pads are set to be negative. This is to keep the info on which values were inter/extrapolated ("*estimated*") and which come from the fitting procedure itself.
+
+Please note that maps for chambers with no response, this method will do nothing. These need to be dealt with later.
+
+#### Normalizing the maps
+This is done using the method `PadCalibCCDBBuilder::createNormalizedMap`. This method takes a filled map, computes its mean (also including the estimated pad values), and creates a new map which will have pads filled with a ratio of the gain in the original map with respect to the map average:
+```
+normalized gain = gain in pad / map average gain.
+```
+
+#### Filling the empty maps
+At last, the empty maps are to be filled. 
+The method `PadCalibCCDBBuilder::populateEmptyNormalizedMap` will set all the pads to -1.
+**This method is included it in the code available in O^2, but is not used in the steering macro that comes with the code.**
+
+<span style="color:red">**Do not forget to fill the empty maps too. The correction is applied in the denominator, so leaving this empty will mess up everything.**</span>
+
+The code also contains the method `PadCalibCCDBBuilder::transformMapIntoAbsoluteValues`, which takes the filled, normalized maps and replaces all the estimated values with their respective absolute values. This makes it easier to visualy inspect the maps and check if they are indeed smooth and filled properly.
+
+#### Plotting user friendly maps
+The final maps to be uploaded to the database contain a bunch of pads with negative gain. This makes reading the maps hard. For user convenience, the class contains a method `PadCalibCCDBBuilder::transformMapIntoAbsoluteValues`, which takes the filled map and creates a new one with all pads set to their absolute gain.
+
+### Uploading the maps to the CCDB
+In 2022, the maps were to be uploaded to the Test-CCDB by the user, the subsequent upload from test to actual CCDB had to be requested. Check this is still true and then call:
+
+```
+o2::ccdb::CcdbApi ccdb;
+ccdb.init("http://ccdb-test.cern.ch:8080");
+```
+Next you can define metadata for your upload - this can be any kind of note you think may be useful or name of the user who did the upload, e.g.,:
+```
+std::map<std::string, std::string> metadata;
+metadata.insert({"Responsible","User Name (user.email@cern.ch)"});
+metadata.insert({"Note","calibration to be tested with PID"});
+```
+The map `metadata` MUST be initiated but you can leave it empty (as in the code example in this repo).
+
+The validity of the calibration is handled by its start and end timestamps. These can be computed from time_t as
+```
+time_t start_time = 1631311200; // Fri Sep 10 2021 22:00:00 GMT+0000
+time_t end_time = 2208985200;   // Sat Dec 31 2039 23:00:00 GMT+0000
+auto timeStamp = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::from_time_t(start_time).time_since_epoch()).count();
+auto timeStampEnd = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::from_time_t(end_time).time_since_epoch()).count();
+```
+
+The `LocalGainFactor calObject` is then uploaded with
+```
+ccdb.storeAsTFileAny(&calObject, "TRD/Calib/LocalGainFactor", metadata, timeStamp, timeStampEnd);
+```
+
+You can check that your object is uploaded to the path you entered in your browser at [http://ccdb-test.cern.ch:8080/browse/TRD/Calib/LocalGainFactor](http://ccdb-test.cern.ch:8080/browse/TRD/Calib/LocalGainFactor) (update for the path you used).
