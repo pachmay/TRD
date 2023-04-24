@@ -97,7 +97,7 @@ The function uses the following arguments:
 
 First you need to fit the merged spectra, which you obtained from running the code described in **Part 1** in **mode 0**:
 ```
-root -l -b -q 'Ana_ADC_spectra.cc++(-1,0,-1,"KrHistOutput_<runNumber>_mode2_sector-1.root","Fits_mode0.root")'
+root -l -b -q 'Ana_ADC_spectra.cc++(-1,0,-1,"KrHistOutput_<runNumber>_mode0_sector-1.root","Fits_mode0.root")'
 ```
 
 Using the fit results stored in `"Fits_mode0.root"` and the pad ADC spectra obtained in Part 1 with **mode 2**:
