@@ -256,6 +256,11 @@ ccdb.storeAsTFileAny(&calObject, "TRD/Calib/LocalGainFactor", metadata, timeStam
 
 You can check that your object is uploaded to the path you entered in your browser at [http://ccdb-test.cern.ch:8080/browse/TRD/Calib/LocalGainFactor](http://ccdb-test.cern.ch:8080/browse/TRD/Calib/LocalGainFactor) (update for the path you used).
 
+### Using the stored LocalGainFactor
+The best way to get the LocalGainFactor for each of your pads to use method `Calibrations::getPadGainFactor`, see `Detectors/TRD/base/src/Calibrations.cxx`([l.109](https://github.com/AliceO2Group/AliceO2/blob/b8250cd36b3f8baa0809fbfe339f309fc26749b0/Detectors/TRD/base/src/Calibrations.cxx#L109)). This method returns the absolute value of the stored LocalGainFactor for a given pad and in case no value it returns `-1`.
+
+**For the 2021+2022 Kr calibration, only positive values have been uploaded. If you use the above metnioned method to retrieve the calibration, then it does not matter whether the values are positive or negative. But if you opt to not use the method, make sure you always use the absolute value!**
+
 ## Presentations in TRD Meetings
 - [https://indico.cern.ch/event/1201748/contributions/5054698/attachments/2510991/4315818/KrCalibration_JC_20220919.pdf](https://indico.cern.ch/event/1201748/contributions/5054698/attachments/2510991/4315818/KrCalibration_JC_20220919.pdf)
 - [https://indico.cern.ch/event/1192118/contributions/5013014/attachments/2495480/4285876/20220822_JC_Krypton](https://indico.cern.ch/event/1192118/contributions/5013014/attachments/2495480/4285876/20220822_JC_Krypton)
