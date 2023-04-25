@@ -19,7 +19,8 @@
 #include <sstream>
 #include <string>
 
-// using namespace o2::trd; /* uncomment to run with upload */
+// using namespace o2::trd; /* UNCOMMENT to run with upload */
+// using namespace o2::trd::constants; /* UNCOMMENT to run in O2, this enables the use of constants::MAXCHAMBER */
 
 void CreateCCDBLocalGainFactor(TString sOpenFile)
 {
@@ -27,40 +28,63 @@ void CreateCCDBLocalGainFactor(TString sOpenFile)
 
   TFile* file = TFile::Open(sOpenFile);
   TTree* tree = (TTree*)file->Get("nt_Krypton");
-  // LocalGainFactor calObject; /* uncomment to run with upload */
+  // LocalGainFactor calObject; /* UNCOMMENT to run with upload */
 
-  TH2F* hDetPlot;
+  const int MAXCHAMBER = 540; /* COMMENT to run in O2 because this variable is already defined in o2::trd::constants */
+  TH2F* hDet[MAXCHAMBER];
+  TH2F* hDetPlot[MAXCHAMBER];
 
-  for (int idet = 0; idet < 1 ; idet++) {
+  for (int idet = 0; idet < MAXCHAMBER ; idet++) {
     krCalibToCCDB->setSelection(0,0,0,500);
     TH2F* hDetDef = krCalibToCCDB->getDetectorMap(tree, idet);
-    krCalibToCCDB->smoothenTheDetector(hDetDef, 500);
-    TH2F* hDetFilled = krCalibToCCDB->fillTheMap(hDetDef);
-    delete hDetDef;
-    TH2F* hDet = krCalibToCCDB->createNormalizedMap(hDetFilled);
-    delete hDetFilled;
-    for (int irow = 0; irow < hDet->GetNbinsY(); irow++) {
-      for (int icol = 0; icol < hDet->GetNbinsX(); icol++) {
-        float relativeGain = hDet->GetBinContent(hDet->GetXaxis()->FindBin(icol), hDet->GetYaxis()->FindBin(irow));
-        // calObject.setPadValue(idet, icol, irow, relativeGain); /* uncomment to run with upload */
+
+    if ( hDetDef->GetEntries() == 0 ) { /* this code will act only on EMPTY maps */
+      krCalibToCCDB->populateEmptyNormalizedMap(hDetDef);
+      hDet[idet] = (TH2F*) hDetDef->Clone( Form("%s_normalized", hDetDef->GetName()));
+    } else { /* the following code will populate all the maps with at least 1 hit */
+      krCalibToCCDB->smoothenTheDetector(hDetDef, 500);
+      TH2F* hDetFilled = krCalibToCCDB->fillTheMap(hDetDef);
+      hDet[idet] = krCalibToCCDB->createNormalizedMap(hDetFilled, Form("%s_normalized", hDetDef->GetName()) );
+      delete hDetDef;
+      delete hDetFilled;
+    }
+
+    for (int irow = 0; irow < hDet[idet]->GetNbinsY(); irow++) {
+      for (int icol = 0; icol < hDet[idet]->GetNbinsX(); icol++) {
+        float relativeGain = hDet[idet]->GetBinContent(hDet[idet]->GetXaxis()->FindBin(icol), hDet[idet]->GetYaxis()->FindBin(irow));
+        // calObject.setPadValue(idet, icol, irow, relativeGain); /* UNCOMMENT to run with upload */
       }
     }
 
-    hDetPlot = krCalibToCCDB->transformMapIntoAbsoluteValues(hDet, "hDetPlot"); /* for when you want to check the results visually */
-    // delete hDet; /* uncomment to run with upload */
+    hDetPlot[idet] = krCalibToCCDB->transformMapIntoAbsoluteValues(hDet[idet], Form("hDetSwapped_%i",idet) ); /* for when you want to check the results visually */
+    // delete hDet; /* UNCOMMENT to run with upload */
     cout << idet << endl;
   }
-  hDetPlot->Draw("colz");
+  cout << "done" << endl;
 
-  // delete tree; /* uncomment to run with upload */
-  // delete file; /* uncomment to run with upload */
+  TFile* fout = new TFile("krypton_maps.root", "recreate");
+  fout->mkdir("normalized");
+  fout->mkdir("swapped");
+  for (int idet = 0; idet < MAXCHAMBER ; idet++) {
+    fout->cd("normalized");
+    hDet[idet]->Write();
+    fout->cd();
+    fout->cd("swapped");
+    hDetPlot[idet]->Write();
+    fout->cd();
+  }
+  fout->Write();
+  fout->Close();
 
   // cout << calObject.getValue(0, 52, 13) << endl; /* if you want to check that calObject is indeed filled */
+
+  delete tree; 
+  delete file; 
 
   return;
 
   /* 
-  * uncomment all of the following code to upload to the CCDB 
+  * UNCOMMENT all of the following code to upload to the CCDB 
   */
 
   // o2::ccdb::CcdbApi ccdb;
