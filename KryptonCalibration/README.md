@@ -255,3 +255,16 @@ ccdb.storeAsTFileAny(&calObject, "TRD/Calib/LocalGainFactor", metadata, timeStam
 ```
 
 You can check that your object is uploaded to the path you entered in your browser at [http://ccdb-test.cern.ch:8080/browse/TRD/Calib/LocalGainFactor](http://ccdb-test.cern.ch:8080/browse/TRD/Calib/LocalGainFactor) (update for the path you used).
+
+## Presentations in TRD Meetings
+- [https://indico.cern.ch/event/1201748/contributions/5054698/attachments/2510991/4315818/KrCalibration_JC_20220919.pdf](https://indico.cern.ch/event/1201748/contributions/5054698/attachments/2510991/4315818/KrCalibration_JC_20220919.pdf)
+- [https://indico.cern.ch/event/1192118/contributions/5013014/attachments/2495480/4285876/20220822_JC_Krypton](https://indico.cern.ch/event/1192118/contributions/5013014/attachments/2495480/4285876/20220822_JC_Krypton)
+- [https://indico.cern.ch/event/1171028/contributions/4920346/attachments/2461079/4219495/kr_update_20220613.pdf](https://indico.cern.ch/event/1171028/contributions/4920346/attachments/2461079/4219495/kr_update_20220613.pdf)
+- [https://indico.cern.ch/event/1119469/contributions/4700655/attachments/2377587/4061759/krypton_update_20220123.pdf](https://indico.cern.ch/event/1119469/contributions/4700655/attachments/2377587/4061759/krypton_update_20220123.pdf)
+- [https://indico.cern.ch/event/1136166/contributions/4778355/attachments/2407335/4118436/TRD_Krypton_Calib_07_03_2022.pdf](https://indico.cern.ch/event/1136166/contributions/4778355/attachments/2407335/4118436/TRD_Krypton_Calib_07_03_2022.pdf)
+- [https://indico.cern.ch/event/1100847/contributions/4632347/attachments/2354665/4018174/TRD_Krypton_Calib_29_11_2021.pdf](https://indico.cern.ch/event/1100847/contributions/4632347/attachments/2354665/4018174/TRD_Krypton_Calib_29_11_2021.pdf)
+- [https://indico.cern.ch/event/1070645/contributions/4502264/attachments/2299894/3911887/TRD_Krypton_Calibration_August_2021b.pdf](https://indico.cern.ch/event/1070645/contributions/4502264/attachments/2299894/3911887/TRD_Krypton_Calibration_August_2021b.pdf)
+- [https://indico.cern.ch/event/1068649/contributions/4495047/attachments/2296727/3906097/TRD_Krypton_Calibration_August_2021.pdf](https://indico.cern.ch/event/1068649/contributions/4495047/attachments/2296727/3906097/TRD_Krypton_Calibration_August_2021.pdf)
+- [https://indico.cern.ch/event/1058503/contributions/4456474/attachments/2283776/3881278/TRD_Run3_Krypton_Calib_19_07_2021.pdf](https://indico.cern.ch/event/1058503/contributions/4456474/attachments/2283776/3881278/TRD_Run3_Krypton_Calib_19_07_2021.pdf)
+- [https://indico.cern.ch/event/1056404/contributions/4449628/attachments/2280059/3873830/TRD_Meeting_20210712.pdf](https://indico.cern.ch/event/1056404/contributions/4449628/attachments/2280059/3873830/TRD_Meeting_20210712.pdf)
+- [https://indico.cern.ch/event/1056026/contributions/4439326/attachments/2276025/3866521/TRD_Run3_Krypton_Calib_05_07_2021.pdf](https://indico.cern.ch/event/1056026/contributions/4439326/attachments/2276025/3866521/TRD_Run3_Krypton_Calib_05_07_2021.pdf)
