@@ -52,6 +52,9 @@ void CreateCCDBLocalGainFactor(TString sOpenFile)
     for (int irow = 0; irow < hDet[idet]->GetNbinsY(); irow++) {
       for (int icol = 0; icol < hDet[idet]->GetNbinsX(); icol++) {
         float relativeGain = hDet[idet]->GetBinContent(hDet[idet]->GetXaxis()->FindBin(icol), hDet[idet]->GetYaxis()->FindBin(irow));
+        if ( relativeGain < 1e-4 ) { /* added to make sure no empties are uploaded */
+          relativeGain = -1;
+        }
         // calObject.setPadValue(idet, icol, irow, relativeGain); /* UNCOMMENT to run with upload */
       }
     }
@@ -62,6 +65,7 @@ void CreateCCDBLocalGainFactor(TString sOpenFile)
   }
   cout << "done" << endl;
 
+  /* COMMENT the following lines if you do NOT want to store the normalized and swapped maps locally*/
   TFile* fout = new TFile("krypton_maps.root", "recreate");
   fout->mkdir("normalized");
   fout->mkdir("swapped");
