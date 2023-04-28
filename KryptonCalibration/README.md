@@ -47,6 +47,8 @@ if(deltaTime < 28 && deltaRow == 0 && (deltaColumn == 1 || deltaColumn == 2) )
 ```
 What it means is that accepted clusters may last for up to of 28 time bins and span over one pad in the row direction and two or three pads in the columns direction.
 
+In case you would want to test the cuts yourself, you can check out the example QA code in the `clusterQA` folder.
+
 #### Running the steering macro
 To run the macro, you need to give it as arguments:
 - `runNumber`, which is used to set the proper input path and time information. With the current setup you would typically store the data in folders corresponding to dufferent runs so the runNumber parameter can be your switch. 
