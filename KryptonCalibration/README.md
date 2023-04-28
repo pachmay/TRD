@@ -39,6 +39,13 @@ To run the code, use the steering macro `Macro_AliTrdKrClusterO2.cc`.
     - Set input folder using use `AliTrdKrClusterO2::setInputDir`. The path should point to the folder containing your `trdkrclusters_*.root` files. **The path MUST end with an `/`**, e.g., `AliTrdKrClusterO2->setInputDir("/misc/alidata141/alice_u/schmah/TRD/Calibration/Krypton/Data/Clusters/2021/501483_new/")"`. **This applies to ALL paths you may need to set in this macro.**
     - Set output folder with `AliTrdKrClusterO2::setOutdir`. 
 
+### Cluster selection
+Clusters accepted for analysis must fulfil certain quality criteria, i.e., 
+These are hardcoded in `AliTrdKrClusterO2::loopClusters`(see [l. 465](https://github.com/pachmay/TRD/blob/c3adf9d017ea27c2daff5489bcc5944d231b093f/KryptonCalibration/AliTrdKrClusterO2.cxx#L465)):
+```
+if(deltaTime < 28 && deltaRow == 0 && (deltaColumn == 1 || deltaColumn == 2) )
+```
+What it means is that accepted clusters may last for up to of 28 time bins and span over one pad in the row direction and two or three pads in the columns direction.
 
 #### Running the steering macro
 To run the macro, you need to give it as arguments:
