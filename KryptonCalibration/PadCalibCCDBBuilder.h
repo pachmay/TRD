@@ -35,7 +35,7 @@ class PadCalibCCDBBuilder
   PadCalibCCDBBuilder() = default;
   ~PadCalibCCDBBuilder() = default;
 
-  void checkIfIsolatedHotPadCandidate(TH2F* hDet, std::vector<int> coordinates, float upperLimit = 1.5, int areaContainedWithin = 4);
+  void checkIfIsolatedHotPadCandidate(TH2F* hDet, std::vector<int> coordinates, float upperLimit = 1.5, int areaMustBeContainedWithin = 4);
   void checkIfSmallerCloserToCenter(TH2F* hDet, std::vector<int> coordinates, float allowedDifference);
   std::vector<int> compareGain(TH2F* hDet, int column, int row, int shiftcolumn, int shiftrow, float allowedDifference);
   float computeDetectorAverage(TH2F* hDet);
@@ -58,6 +58,13 @@ class PadCalibCCDBBuilder
   void smoothenTheDetector(TH2F* hDet, float allowedDifference = 1000);
   TH2F* transformMapIntoAbsoluteValues(TH2F* hDet, TString sName = "");
 
+  /**
+   * Sets selection criteria to filter out pads to be filled based on the fit rersults to the ADC spectra in the pad.
+   * @param minchi gives the minimum chi2 of an accepted fit
+   * @param minamp minimum amplitude of an accepted fit
+   * @param minsgm minimum std. dev of an accepted fit
+   * @param maxsgm maximum std. dev of an accepted fit
+   */ 
   void setSelection(float minchi, float minamp, float minsgm, float maxsgm) { mChiMin = minchi; mAmpMin = minamp; mSgmMin = minsgm; mSgmMax = maxsgm; }
 
   float mChiMin = 0;
