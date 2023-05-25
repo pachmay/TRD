@@ -35,14 +35,13 @@ void CreateCCDBLocalGainFactor(TString sOpenFile)
   TH2F* hDetPlot[MAXCHAMBER];
 
   for (int idet = 0; idet < MAXCHAMBER ; idet++) {
-    krCalibToCCDB->setSelection(0,0,0,500);
     TH2F* hDetDef = krCalibToCCDB->getDetectorMap(tree, idet);
 
     if ( hDetDef->GetEntries() == 0 ) { /* this code will act only on EMPTY maps */
       krCalibToCCDB->populateEmptyNormalizedMap(hDetDef);
       hDet[idet] = (TH2F*) hDetDef->Clone( Form("%s_normalized", hDetDef->GetName()));
     } else { /* the following code will populate all the maps with at least 1 hit */
-      krCalibToCCDB->smoothenTheDetector(hDetDef, 500);
+      krCalibToCCDB->smoothenTheDetector(hDetDef, krCalibToCCDB->computeDetectorAverage(hDetDef)*.5 );
       TH2F* hDetFilled = krCalibToCCDB->fillTheMap(hDetDef);
       hDet[idet] = krCalibToCCDB->createNormalizedMap(hDetFilled, Form("%s_normalized", hDetDef->GetName()) );
       delete hDetDef;
